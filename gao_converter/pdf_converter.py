@@ -8,29 +8,46 @@ import pymupdf
 
 def pdf_to_markdown(pdf_path: str, title: str = "", report_id: str = "",
                     pub_date: str = "") -> str:
-    """Convert a GAO PDF to clean, well-structured markdown.
-
-    Args:
-        pdf_path: Path to the PDF file
-        title: Report title (used in header)
-        report_id: GAO report ID (e.g., gao-26-108116)
-        pub_date: Publication date
-
-    Returns:
-        Clean markdown string
-    """
+    """Convert a GAO PDF to clean, well-structured markdown."""
     if not os.path.exists(pdf_path):
         raise FileNotFoundError(f"PDF not found: {pdf_path}")
 
     # Extract the Highlights page summary directly from PDF
     highlights = extract_highlights(pdf_path)
 
-    # Extract markdown using pymupdf4llm
-    raw_md = pymupdf4llm.to_markdown(pdf_path)
+    # Identify the highlights page numbers to skip in body
+    highlights_pages = find_highlights_pages(pdf_path)
+
+    # Extract markdown using pymupdf4llm, skipping cover + highlights pages
+    doc = pymupdf.open(pdf_path)
+    total_pages = doc.page_count
+    doc.close()
+
+    # Pages to skip: cover (page 0) and highlights page(s)
+    skip_pages = {0} | highlights_pages
+    # Build the page list for extraction (0-indexed)
+    pages_to_extract = [i for i in range(total_pages) if i not in skip_pages]
+
+    if pages_to_extract:
+        raw_md = pymupdf4llm.to_markdown(pdf_path, pages=pages_to_extract)
+    else:
+        raw_md = pymupdf4llm.to_markdown(pdf_path)
 
     # Post-process the markdown
     md = clean_gao_markdown(raw_md, title, report_id, pub_date, highlights)
     return md
+
+
+def find_highlights_pages(pdf_path: str) -> set:
+    """Find which pages contain the Highlights section."""
+    doc = pymupdf.open(pdf_path)
+    pages = set()
+    for i in range(min(4, doc.page_count)):
+        text = doc[i].get_text()
+        if 'What GAO Found' in text and ('Highlights' in text or 'Why GAO' in text):
+            pages.add(i)
+    doc.close()
+    return pages
 
 
 def extract_highlights(pdf_path: str) -> dict:
@@ -42,10 +59,8 @@ def extract_highlights(pdf_path: str) -> dict:
     doc = pymupdf.open(pdf_path)
     highlights = {}
 
-    # Check pages 1-3 for the Highlights section
     for page_num in range(min(4, doc.page_count)):
         text = doc[page_num].get_text()
-
         if 'What GAO Found' not in text:
             continue
 
@@ -55,7 +70,7 @@ def extract_highlights(pdf_path: str) -> dict:
             text, re.DOTALL
         )
         if found_match:
-            highlights['what_found'] = found_match.group(1).strip()
+            highlights['what_found'] = _clean_highlights_text(found_match.group(1))
 
         # Extract "Why GAO Did This Study"
         why_match = re.search(
@@ -63,15 +78,15 @@ def extract_highlights(pdf_path: str) -> dict:
             text, re.DOTALL
         )
         if why_match:
-            highlights['why_study'] = why_match.group(1).strip()
+            highlights['why_study'] = _clean_highlights_text(why_match.group(1))
 
         # Extract "What GAO Recommends"
         rec_match = re.search(
-            r'What GAO Recommends\s*\n(.*?)(?=View GAO|$)',
+            r'What GAO Recommends\s*\n(.*?)(?=View GAO|For more info|$)',
             text, re.DOTALL
         )
         if rec_match:
-            highlights['recommendations'] = rec_match.group(1).strip()
+            highlights['recommendations'] = _clean_highlights_text(rec_match.group(1))
 
         break
 
@@ -79,47 +94,87 @@ def extract_highlights(pdf_path: str) -> dict:
     return highlights
 
 
+def _clean_highlights_text(text: str) -> str:
+    """Clean up extracted highlights text."""
+    # Remove figure references and captions
+    text = re.sub(r'(?:See )?[Ff]igure \d+[^.]*\.?', '', text)
+    # Remove "View GAO-..." references
+    text = re.sub(r'View GAO-[\w-]+.*$', '', text, flags=re.MULTILINE)
+    # Remove page references
+    text = re.sub(r'\(see [fp]\w+ \d+\)', '', text, flags=re.IGNORECASE)
+    # Collapse whitespace
+    text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)
+    return text.strip()
+
+
 def clean_gao_markdown(raw_md: str, title: str = "", report_id: str = "",
                        pub_date: str = "", highlights: dict = None) -> str:
     """Clean and structure the raw markdown from PDF extraction."""
     highlights = highlights or {}
-
-    # First pass: remove GAO-specific artifacts at the text level
     content = raw_md
+    rid_upper = report_id.upper() if report_id else ""
 
-    # Remove page number markers (e.g., "**Page 1** **GAO-07-283**" or "Page i")
+    # ========== Phase 1: Remove GAO boilerplate and artifacts ==========
+
+    # Remove broken bold formatting from cover page (e.g., "**United** **States**...")
+    content = re.sub(r'\*\*United\*\*\s*\*\*States\*\*\s*\*\*Government\s*Accountability\*\*\s*\*\*Office\*\*',
+                     '', content)
+
+    # Remove page number markers
     content = re.sub(r'\*\*Page [ivxlcdm\d]+\*\*\s*\*\*GAO-[\w-]+[^*]*\*\*', '', content)
     content = re.sub(r'^[*]*Page [ivxlcdm\d]+[*]*\s*$', '', content, flags=re.MULTILINE)
 
-    # Remove image placeholders that are just artifacts
+    # Remove stray "A ." artifacts (common on GAO cover pages)
+    content = re.sub(r'^A\s*\.\s*$', '', content, flags=re.MULTILINE)
+
+    # Remove image placeholders
     content = re.sub(r'!\[\]\([^)]*\)\s*\n?', '', content)
 
-    # Remove TOC-style lines like "Letter 1" "Results in Brief 4" "Appendix I 30"
-    # These are lines that end with a number and are typical TOC entries
-    content = re.sub(r'^(?:Letter|Appendix [IVX]+|Results in Brief|Background|'
-                     r'Contents|Table of Contents|Figures?|Tables?|'
-                     r'Abbreviations|Scope and Methodology|Objectives,? Scope)'
-                     r'\s+\d+\s*$', '', content, flags=re.MULTILINE)
+    # Remove TOC entries (lines like "Letter 1", "Background 5", "Appendix I 30")
+    content = re.sub(
+        r'^(?:Letter|Appendix [IVX]+|Results in Brief|Background|'
+        r'Contents|Table of Contents|Figures?|Tables?|'
+        r'Abbreviations|Scope and Methodology|Objectives,? Scope|'
+        r'Conclusions?|Recommendations?|Agency Comments?)'
+        r'\s+\d+\s*$', '', content, flags=re.MULTILINE)
 
-    # Remove standalone "Contents" or "Table of Contents" headers followed by TOC
+    # Remove standalone "Contents" headers
     content = re.sub(r'^#{1,6}\s*(?:Table of )?Contents\s*$', '', content, flags=re.MULTILINE)
 
-    # Remove GAO report identifier lines that appear as headers/footers
+    # Remove GAO report ID lines in headers
     content = re.sub(r'^#{1,6}\s*GAO-[\d]+-[\d\w]+\s*$', '', content, flags=re.MULTILINE)
 
-    # Remove repeated "GAO Report to..." lines after the first
+    # Remove duplicate highlights content from body (we have it separately)
+    if highlights.get('what_found'):
+        # Remove "What GAO Found" / "Why GAO Did This Study" sections in body
+        content = re.sub(r'\*\*What GAO Found\*\*.*?(?=\*\*Why GAO|\*\*What GAO Recommends|#{1,6}|$)',
+                         '', content, flags=re.DOTALL, count=1)
+        content = re.sub(r'\*\*Why GAO Did This Study\*\*.*?(?=\*\*What GAO|#{1,6}|$)',
+                         '', content, flags=re.DOTALL, count=1)
+        content = re.sub(r'\*\*What GAO Recommends\*\*.*?(?=#{1,6}|$)',
+                         '', content, flags=re.DOTALL, count=1)
+
+    # Remove repeated "Report to Congressional..." lines after the first
     gao_report_pattern = r'(?:GAO\s+)?Report to Congressional (?:Requesters?|Committees?)'
     matches = list(re.finditer(gao_report_pattern, content, re.IGNORECASE))
     if len(matches) > 1:
-        # Keep only the first occurrence
         for m in reversed(matches[1:]):
             content = content[:m.start()] + content[m.end():]
 
-    # Strip figure/table reference lines where figures are removed
-    content = re.sub(r'^Figure \d+:.*?(?:\d+\s*)?$', r'*[Figure removed from text conversion]*',
-                     content, flags=re.MULTILINE)
+    # Remove "For Release on Delivery" and date/time lines
+    content = re.sub(r'^For Release on Delivery.*$', '', content, flags=re.MULTILINE)
+    content = re.sub(r'^Expected at \d+.*$', '', content, flags=re.MULTILINE)
 
-    # Second pass: line-by-line cleanup
+    # Improve figure placeholders: keep caption context
+    content = re.sub(
+        r'^Figure (\d+):\s*(.+?)(?:\s+\d+)?\s*$',
+        r'*[Figure \1: \2 — see original PDF]*',
+        content, flags=re.MULTILINE)
+    # Generic figure removal markers
+    content = re.sub(r'\*\[Figure removed from text conversion\]\*',
+                     '*[Figure — see original PDF]*', content)
+
+    # ========== Phase 2: Line-by-line cleanup ==========
     lines = content.split('\n')
     cleaned = []
     prev_blank = False
@@ -132,7 +187,7 @@ def clean_gao_markdown(raw_md: str, title: str = "", report_id: str = "",
         if re.match(r'^Page \d+ of \d+$', stripped):
             continue
 
-        # Skip repeated GAO organization name (keep first only)
+        # Skip repeated GAO organization name
         if stripped in ('United States Government Accountability Office',
                         'U.S. Government Accountability Office',
                         'Government Accountability Office'):
@@ -144,10 +199,23 @@ def clean_gao_markdown(raw_md: str, title: str = "", report_id: str = "",
         if re.match(r'^(?:\*\*)?GAO-\d+-\d+\w*(?:\*\*)?$', stripped):
             continue
 
-        # Skip "For Release on Delivery" type lines (keep content meaningful)
-        if re.match(r'^For Release on Delivery', stripped):
+        # Skip month/year lines that are just date stamps
+        if re.match(r'^(?:January|February|March|April|May|June|July|August|'
+                     r'September|October|November|December)\s+\d{4}$', stripped):
             continue
-        if re.match(r'^Expected at \d+', stripped):
+
+        # Skip "report to congressional" header lines
+        if re.match(r'^#{1,6}\s*(?:A\s+)?(?:Report|Testimony|Letter) to', stripped, re.IGNORECASE):
+            continue
+
+        # Skip contact info lines from highlights page
+        if re.match(r'^\[?For more information,? contact:', stripped):
+            continue
+        if re.match(r'^[A-Z][a-z]+ [A-Z][a-z]+ at \w+@gao\.gov', stripped):
+            continue
+
+        # Skip "View GAO-..." reference lines
+        if re.match(r'^View GAO-', stripped):
             continue
 
         # Normalize excessive blank lines
@@ -162,7 +230,7 @@ def clean_gao_markdown(raw_md: str, title: str = "", report_id: str = "",
 
     content = '\n'.join(cleaned).strip()
 
-    # Build the final document with front matter
+    # ========== Phase 3: Assemble final document ==========
     parts = []
 
     if title:
@@ -178,7 +246,7 @@ def clean_gao_markdown(raw_md: str, title: str = "", report_id: str = "",
 
     parts.append('---')
 
-    # Insert highlights summary at top if available
+    # Insert highlights summary at top
     if highlights.get('what_found'):
         parts.append('## Highlights')
         parts.append(f"### What GAO Found\n\n{highlights['what_found']}")
@@ -197,12 +265,13 @@ def get_pdf_metadata(pdf_path: str) -> dict:
     """Extract metadata from a PDF file."""
     doc = pymupdf.open(pdf_path)
     meta = doc.metadata
+    page_count = doc.page_count
     doc.close()
     return {
         'title': meta.get('title', ''),
         'author': meta.get('author', ''),
         'subject': meta.get('subject', ''),
-        'pages': doc.page_count if hasattr(doc, 'page_count') else 0,
+        'pages': page_count,
     }
 
 

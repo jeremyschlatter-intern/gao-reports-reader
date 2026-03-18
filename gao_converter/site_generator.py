@@ -3,8 +3,11 @@
 import json
 import os
 import shutil
+import subprocess
+import tempfile
 import re
 from typing import List
+from datetime import date
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
@@ -28,58 +31,58 @@ def read_markdown(report_id: str) -> str:
     return ""
 
 
-def md_to_html_simple(md: str) -> str:
-    """Simple markdown to HTML conversion (no external deps)."""
-    html = md
+def md_to_html(md: str) -> str:
+    """Convert markdown to HTML using pandoc for proper formatting."""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False,
+                                      encoding='utf-8') as f:
+        f.write(md)
+        tmp_path = f.name
 
-    # Headers
-    html = re.sub(r'^###### (.+)$', r'<h6>\1</h6>', html, flags=re.MULTILINE)
-    html = re.sub(r'^##### (.+)$', r'<h5>\1</h5>', html, flags=re.MULTILINE)
-    html = re.sub(r'^#### (.+)$', r'<h4>\1</h4>', html, flags=re.MULTILINE)
+    try:
+        result = subprocess.run(
+            ['pandoc', tmp_path, '-f', 'markdown', '-t', 'html5',
+             '--no-highlight'],
+            capture_output=True, text=True, timeout=30
+        )
+        if result.returncode == 0:
+            return result.stdout
+        # Fall back to simple conversion on error
+        return _md_to_html_fallback(md)
+    except Exception:
+        return _md_to_html_fallback(md)
+    finally:
+        os.unlink(tmp_path)
+
+
+def _md_to_html_fallback(md: str) -> str:
+    """Simple fallback markdown to HTML (if pandoc unavailable)."""
+    html = md
     html = re.sub(r'^### (.+)$', r'<h3>\1</h3>', html, flags=re.MULTILINE)
     html = re.sub(r'^## (.+)$', r'<h2>\1</h2>', html, flags=re.MULTILINE)
     html = re.sub(r'^# (.+)$', r'<h1>\1</h1>', html, flags=re.MULTILINE)
-
-    # Bold and italic
-    html = re.sub(r'\*\*\*(.+?)\*\*\*', r'<strong><em>\1</em></strong>', html)
     html = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html)
     html = re.sub(r'\*(.+?)\*', r'<em>\1</em>', html)
-
-    # Links
     html = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', html)
-
-    # Horizontal rules
     html = re.sub(r'^---+$', '<hr>', html, flags=re.MULTILINE)
+    paragraphs = re.split(r'\n\n+', html)
+    return '\n'.join(f'<p>{p.strip()}</p>' if not p.strip().startswith('<') else p
+                     for p in paragraphs if p.strip())
 
-    # Lists
-    html = re.sub(r'^(\d+)\. (.+)$', r'<li>\2</li>', html, flags=re.MULTILINE)
-    html = re.sub(r'^- (.+)$', r'<li>\1</li>', html, flags=re.MULTILINE)
 
-    # Paragraphs (wrap remaining text blocks)
-    lines = html.split('\n')
-    result = []
-    in_para = False
-    for line in lines:
-        stripped = line.strip()
-        if not stripped:
-            if in_para:
-                result.append('</p>')
-                in_para = False
-            result.append('')
-        elif stripped.startswith('<h') or stripped.startswith('<hr') or stripped.startswith('<li'):
-            if in_para:
-                result.append('</p>')
-                in_para = False
-            result.append(stripped)
-        else:
-            if not in_para:
-                result.append('<p>')
-                in_para = True
-            result.append(stripped)
-    if in_para:
-        result.append('</p>')
+def extract_topic(title: str) -> str:
+    """Extract a topic/category from a GAO report title.
 
-    return '\n'.join(result)
+    GAO titles follow the pattern: 'Topic Area: Specific Title'
+    """
+    if ':' in title:
+        topic = title.split(':')[0].strip()
+        # Clean up common prefixes
+        topic = re.sub(r'^\d+\s+', '', topic)
+        # Keep it concise
+        if len(topic) > 40:
+            topic = topic[:40].rsplit(' ', 1)[0]
+        return topic
+    return "General"
 
 
 def get_summary_snippet(report_id: str, max_chars: int = 250) -> str:
@@ -135,12 +138,28 @@ def get_summary_snippet(report_id: str, max_chars: int = 250) -> str:
 
 def generate_index_page(catalog: List[dict]) -> str:
     """Generate the main index HTML page."""
+    # Collect all topics for filter chips
+    topics = {}
+    for report in catalog:
+        topic = extract_topic(report['title'])
+        report['_topic'] = topic
+        topics[topic] = topics.get(topic, 0) + 1
+
+    # Sort topics by frequency
+    sorted_topics = sorted(topics.items(), key=lambda x: -x[1])
+
+    # Generate topic filter chips
+    topic_chips = ['<button class="chip active" data-topic="all">All</button>']
+    for topic, count in sorted_topics:
+        topic_chips.append(
+            f'<button class="chip" data-topic="{topic.lower()}">{topic} ({count})</button>'
+        )
+    topic_html = '\n'.join(topic_chips)
+
+    # Generate report cards
     report_cards = []
     for report in catalog:
-        source_badge = ('Full Report' if report.get('source') == 'pdf'
-                       else 'Summary')
-        source_class = ('badge-pdf' if report.get('source') == 'pdf'
-                       else 'badge-summary')
+        topic = report.get('_topic', 'General')
 
         downloads = []
         downloads.append(f'<a href="reports/{report["report_id"]}.html" class="btn btn-read">Read</a>')
@@ -153,10 +172,11 @@ def generate_index_page(catalog: List[dict]) -> str:
 
         card = f'''<article class="report-card" data-date="{report['pub_date']}"
                          data-title="{report['title'].lower()}"
-                         data-id="{report['report_id']}">
+                         data-id="{report['report_id']}"
+                         data-topic="{topic.lower()}">
             <div class="report-meta">
                 <time datetime="{report['pub_date']}">{report['pub_date']}</time>
-                <span class="badge {source_class}">{source_badge}</span>
+                <span class="badge badge-topic">{topic}</span>
                 <span class="report-id">{report['report_id'].upper()}</span>
             </div>
             <h2><a href="reports/{report['report_id']}.html">{report['title']}</a></h2>
@@ -168,7 +188,17 @@ def generate_index_page(catalog: List[dict]) -> str:
         </article>'''
         report_cards.append(card)
 
-    return INDEX_TEMPLATE.replace('{{REPORT_CARDS}}', '\n'.join(report_cards))
+    # Determine last updated date
+    if catalog:
+        last_updated = max(r['pub_date'] for r in catalog)
+    else:
+        last_updated = date.today().isoformat()
+
+    return (INDEX_TEMPLATE
+            .replace('{{REPORT_CARDS}}', '\n'.join(report_cards))
+            .replace('{{TOPIC_FILTERS}}', topic_html)
+            .replace('{{LAST_UPDATED}}', last_updated)
+            .replace('{{REPORT_COUNT}}', str(len(catalog))))
 
 
 def generate_report_page(report: dict, md_content: str) -> str:
@@ -183,7 +213,7 @@ def generate_report_page(report: dict, md_content: str) -> str:
     # Remove leading horizontal rule
     stripped_md = re.sub(r'^---+\s*\n+', '', stripped_md)
 
-    html_content = md_to_html_simple(stripped_md)
+    html_content = md_to_html(stripped_md)
 
     downloads = []
     downloads.append(f'<a href="../markdown/{report["report_id"]}.md" class="btn btn-md" download>Markdown</a>')
@@ -259,6 +289,7 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GAO Reports — Read Anywhere</title>
+    <link rel="alternate" type="application/rss+xml" title="GAO Reports Feed" href="feed.xml">
     <style>
         :root {
             --navy: #1a2744;
@@ -270,8 +301,6 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
             --text: #2c3e50;
             --text-light: #6c757d;
             --border: #dee2e6;
-            --success: #28a745;
-            --info: #17a2b8;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -418,14 +447,38 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
             text-transform: uppercase;
         }
 
-        .badge-pdf {
-            background: #d4edda;
-            color: #155724;
+        .badge-topic {
+            background: #e8eaf6;
+            color: #283593;
         }
 
-        .badge-summary {
-            background: #cce5ff;
-            color: #004085;
+        .topic-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .chip {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 0.25rem 0.7rem;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: all 0.15s;
+        }
+
+        .chip:hover {
+            border-color: var(--navy);
+            color: var(--navy);
+        }
+
+        .chip.active {
+            background: var(--navy);
+            color: white;
+            border-color: var(--navy);
         }
 
         .report-card h2 {
@@ -509,40 +562,29 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
             color: var(--navy);
         }
 
-        .convert-section {
+        .about-section {
             background: var(--card-bg);
-            border: 2px dashed var(--border);
+            border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
+            padding: 1.5rem 2rem;
             margin: 1.5rem 0;
         }
 
-        .convert-section h3 {
+        .about-section h3 {
             margin-bottom: 0.5rem;
+            color: var(--navy);
         }
 
-        .convert-section p {
+        .about-section p {
             color: var(--text-light);
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
         }
 
-        .drop-zone {
-            border: 2px dashed var(--navy-light);
-            border-radius: 8px;
-            padding: 2rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: var(--bg);
-        }
-
-        .drop-zone:hover, .drop-zone.dragover {
-            background: #e3f2fd;
-            border-color: var(--navy);
-        }
-
-        .drop-zone input {
-            display: none;
+        .about-links {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .no-results {
@@ -569,7 +611,8 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
                 <span class="header-badge">Markdown</span>
                 <span class="header-badge">EPUB / Kindle</span>
                 <span class="header-badge">HTML</span>
-                <span class="header-badge">Open Formats</span>
+                <span class="header-badge">{{REPORT_COUNT}} Reports</span>
+                <span class="header-badge">Last updated: {{LAST_UPDATED}}</span>
             </div>
         </div>
     </header>
@@ -578,6 +621,10 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
         <div class="search-bar">
             <input type="text" id="search" placeholder="Search reports by title, ID, or keyword..."
                    aria-label="Search reports">
+        </div>
+
+        <div class="topic-filters" id="topicFilters">
+            {{TOPIC_FILTERS}}
         </div>
 
         <div class="toolbar">
@@ -597,12 +644,16 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
             <p>Try a different search term.</p>
         </div>
 
-        <section class="convert-section">
-            <h3>Convert Your Own GAO PDF</h3>
-            <p>Have a GAO PDF you want to convert? Use our command-line tool.</p>
-            <code style="display:block; background: #263238; color: #aed581; padding: 1rem; border-radius: 4px; text-align: left; font-size: 0.9rem;">
-                python convert.py your-report.pdf
-            </code>
+        <section class="about-section">
+            <h3>About This Site</h3>
+            <p>This tool automatically converts GAO reports from PDF to open, portable formats.
+               Download EPUB files for your Kindle, grab the Markdown for your notes, or read right here in your browser.</p>
+            <p>Reports are converted from official GAO PDFs. The full text is preserved, including the Highlights summary
+               that appears at the top of each report.</p>
+            <p class="about-links">
+                <a href="feed.xml" class="btn">Subscribe via RSS</a>
+                <a href="https://github.com/jeremyschlatter-intern/gao-reports-reader" class="btn" target="_blank" rel="noopener">View Source on GitHub</a>
+            </p>
         </section>
     </main>
 
@@ -614,28 +665,39 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
     </footer>
 
     <script>
-        // Search
+        // State
         const searchInput = document.getElementById('search');
         const reports = document.querySelectorAll('.report-card');
         const resultCount = document.getElementById('resultCount');
         const noResults = document.getElementById('noResults');
+        let activeTopic = 'all';
 
-        function updateCount() {
+        function filterReports() {
+            const query = searchInput.value.toLowerCase().trim();
+            reports.forEach(card => {
+                const title = card.dataset.title || '';
+                const id = card.dataset.id || '';
+                const topic = card.dataset.topic || '';
+                const text = card.textContent.toLowerCase();
+                const matchSearch = !query || title.includes(query) || id.includes(query) || text.includes(query);
+                const matchTopic = activeTopic === 'all' || topic === activeTopic;
+                card.style.display = (matchSearch && matchTopic) ? '' : 'none';
+            });
             const visible = document.querySelectorAll('.report-card:not([style*="display: none"])');
             resultCount.textContent = visible.length + ' report' + (visible.length !== 1 ? 's' : '');
             noResults.style.display = visible.length === 0 ? 'block' : 'none';
         }
 
-        searchInput.addEventListener('input', function() {
-            const query = this.value.toLowerCase().trim();
-            reports.forEach(card => {
-                const title = card.dataset.title || '';
-                const id = card.dataset.id || '';
-                const text = card.textContent.toLowerCase();
-                const match = !query || title.includes(query) || id.includes(query) || text.includes(query);
-                card.style.display = match ? '' : 'none';
+        searchInput.addEventListener('input', filterReports);
+
+        // Topic filters
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                activeTopic = this.dataset.topic;
+                filterReports();
             });
-            updateCount();
         });
 
         // Sort
@@ -657,7 +719,7 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
             });
         });
 
-        updateCount();
+        filterReports();
     </script>
 </body>
 </html>'''
