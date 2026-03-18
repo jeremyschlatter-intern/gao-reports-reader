@@ -22,17 +22,68 @@ def pdf_to_markdown(pdf_path: str, title: str = "", report_id: str = "",
     if not os.path.exists(pdf_path):
         raise FileNotFoundError(f"PDF not found: {pdf_path}")
 
+    # Extract the Highlights page summary directly from PDF
+    highlights = extract_highlights(pdf_path)
+
     # Extract markdown using pymupdf4llm
     raw_md = pymupdf4llm.to_markdown(pdf_path)
 
     # Post-process the markdown
-    md = clean_gao_markdown(raw_md, title, report_id, pub_date)
+    md = clean_gao_markdown(raw_md, title, report_id, pub_date, highlights)
     return md
 
 
+def extract_highlights(pdf_path: str) -> dict:
+    """Extract the Highlights page from a GAO PDF.
+
+    GAO reports typically have a Highlights page (page 2) with
+    'What GAO Found', 'Why GAO Did This Study', and 'What GAO Recommends'.
+    """
+    doc = pymupdf.open(pdf_path)
+    highlights = {}
+
+    # Check pages 1-3 for the Highlights section
+    for page_num in range(min(4, doc.page_count)):
+        text = doc[page_num].get_text()
+
+        if 'What GAO Found' not in text:
+            continue
+
+        # Extract "What GAO Found"
+        found_match = re.search(
+            r'What GAO Found\s*\n(.*?)(?=What GAO Recommends|Why GAO Did|$)',
+            text, re.DOTALL
+        )
+        if found_match:
+            highlights['what_found'] = found_match.group(1).strip()
+
+        # Extract "Why GAO Did This Study"
+        why_match = re.search(
+            r'Why GAO Did This Study\s*\n(.*?)(?=What GAO|$)',
+            text, re.DOTALL
+        )
+        if why_match:
+            highlights['why_study'] = why_match.group(1).strip()
+
+        # Extract "What GAO Recommends"
+        rec_match = re.search(
+            r'What GAO Recommends\s*\n(.*?)(?=View GAO|$)',
+            text, re.DOTALL
+        )
+        if rec_match:
+            highlights['recommendations'] = rec_match.group(1).strip()
+
+        break
+
+    doc.close()
+    return highlights
+
+
 def clean_gao_markdown(raw_md: str, title: str = "", report_id: str = "",
-                       pub_date: str = "") -> str:
+                       pub_date: str = "", highlights: dict = None) -> str:
     """Clean and structure the raw markdown from PDF extraction."""
+    highlights = highlights or {}
+
     # First pass: remove GAO-specific artifacts at the text level
     content = raw_md
 
@@ -126,6 +177,17 @@ def clean_gao_markdown(raw_md: str, title: str = "", report_id: str = "",
         parts.append(' | '.join(meta))
 
     parts.append('---')
+
+    # Insert highlights summary at top if available
+    if highlights.get('what_found'):
+        parts.append('## Highlights')
+        parts.append(f"### What GAO Found\n\n{highlights['what_found']}")
+        if highlights.get('why_study'):
+            parts.append(f"### Why GAO Did This Study\n\n{highlights['why_study']}")
+        if highlights.get('recommendations'):
+            parts.append(f"### What GAO Recommends\n\n{highlights['recommendations']}")
+        parts.append('---')
+
     parts.append(content)
 
     return '\n\n'.join(parts)

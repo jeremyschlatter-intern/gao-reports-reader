@@ -8,7 +8,7 @@ from typing import List
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
-SITE_DIR = os.path.join(BASE_DIR, 'site')
+SITE_DIR = os.path.join(BASE_DIR, 'docs')
 TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
 
 
@@ -88,15 +88,37 @@ def get_summary_snippet(report_id: str, max_chars: int = 250) -> str:
     if not md:
         return ""
 
-    # Look for "What GAO Found" section content
-    match = re.search(r'###?\s*What GAO Found\s*\n+(.*?)(?=\n###|\n---|\Z)',
-                      md, re.DOTALL)
+    # Look for "What GAO Found" section (may appear as header or bold text)
+    match = (re.search(r'\*\*What GAO Found\*\*\s*\n+(.*?)(?=\n\*\*What GAO|\n\*\*Why GAO|\n---|\Z)',
+                       md, re.DOTALL) or
+             re.search(r'###?\s*What GAO Found\s*\n+(.*?)(?=\n###|\n---|\Z)',
+                       md, re.DOTALL))
     if match:
         text = match.group(1).strip()
     else:
-        # Fall back to content after the metadata header
-        parts = md.split('---', 2)
-        text = parts[2].strip() if len(parts) > 2 else parts[-1].strip()
+        # Try to find the first substantial paragraph after the cover page
+        # Skip past the metadata block, cover page, and title repetitions
+        lines = md.split('\n')
+        text_started = False
+        paragraphs = []
+        for line in lines:
+            stripped = line.strip()
+            # Skip headers, metadata, short lines, and boilerplate
+            if (stripped.startswith('#') or stripped.startswith('**Report:') or
+                stripped.startswith('**Source:') or stripped == '---' or
+                stripped.startswith('**Published:') or
+                'Government Accountability Office' in stripped or
+                'Report to Congressional' in stripped or
+                not stripped):
+                if text_started and not stripped:
+                    break
+                continue
+            # Look for real content (long paragraph text)
+            if len(stripped) > 80 and not stripped.startswith('**') and not stripped.startswith('#'):
+                text_started = True
+                paragraphs.append(stripped)
+
+        text = ' '.join(paragraphs)
 
     # Clean up markdown formatting
     text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
