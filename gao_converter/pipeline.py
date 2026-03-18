@@ -27,32 +27,74 @@ def ensure_dirs():
         os.makedirs(d, exist_ok=True)
 
 
+def _get_gao_session() -> requests.Session:
+    """Create a requests session with browser-like headers for GAO.gov."""
+    session = requests.Session()
+    session.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
+                       'AppleWebKit/537.36 (KHTML, like Gecko) '
+                       'Chrome/121.0.0.0 Safari/537.36',
+        'Accept': 'application/pdf',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'DNT': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+        'Referer': 'https://www.gao.gov/',
+    })
+    return session
+
+
+# Module-level session (reused across downloads)
+_gao_session = None
+
+
 def try_download_pdf(report: GAOReport) -> Optional[str]:
     """Try to download a PDF from various sources. Returns path or None."""
+    global _gao_session
+
     pdf_path = os.path.join(PDF_DIR, report.pdf_filename)
 
-    if os.path.exists(pdf_path):
+    if os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 1000:
         return pdf_path
 
-    # Try GovInfo (works for historical reports)
+    # Try GAO.gov first (with browser-like headers)
+    if _gao_session is None:
+        _gao_session = _get_gao_session()
+
+    try:
+        resp = _gao_session.get(report.pdf_url, timeout=30)
+        if (resp.status_code == 200 and
+                'pdf' in resp.headers.get('content-type', '').lower() and
+                len(resp.content) > 1000):
+            with open(pdf_path, 'wb') as f:
+                f.write(resp.content)
+            print(f"  Downloaded PDF from GAO.gov ({len(resp.content):,} bytes)")
+            return pdf_path
+    except Exception as e:
+        pass
+
+    # Fall back to GovInfo (works for historical reports)
     rid = report.report_id.upper()
     govinfo_url = GOVINFO_PDF_URL.format(rid=rid)
-
-    for url in [govinfo_url, report.pdf_url]:
-        try:
-            resp = requests.get(url, timeout=30, stream=True)
-            if resp.status_code == 200 and 'pdf' in resp.headers.get('content-type', '').lower():
-                with open(pdf_path, 'wb') as f:
-                    for chunk in resp.iter_content(8192):
-                        f.write(chunk)
-                size = os.path.getsize(pdf_path)
-                if size > 1000:  # Valid PDF
-                    print(f"  Downloaded PDF from {url} ({size:,} bytes)")
-                    return pdf_path
-                else:
-                    os.unlink(pdf_path)
-        except Exception:
-            continue
+    try:
+        resp = requests.get(govinfo_url, timeout=30, stream=True)
+        if resp.status_code == 200 and 'pdf' in resp.headers.get('content-type', '').lower():
+            with open(pdf_path, 'wb') as f:
+                for chunk in resp.iter_content(8192):
+                    f.write(chunk)
+            size = os.path.getsize(pdf_path)
+            if size > 1000:
+                print(f"  Downloaded PDF from GovInfo ({size:,} bytes)")
+                return pdf_path
+            else:
+                os.unlink(pdf_path)
+    except Exception:
+        pass
 
     return None
 

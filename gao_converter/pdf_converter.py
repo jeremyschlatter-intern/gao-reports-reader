@@ -33,27 +33,71 @@ def pdf_to_markdown(pdf_path: str, title: str = "", report_id: str = "",
 def clean_gao_markdown(raw_md: str, title: str = "", report_id: str = "",
                        pub_date: str = "") -> str:
     """Clean and structure the raw markdown from PDF extraction."""
-    lines = raw_md.split('\n')
+    # First pass: remove GAO-specific artifacts at the text level
+    content = raw_md
+
+    # Remove page number markers (e.g., "**Page 1** **GAO-07-283**" or "Page i")
+    content = re.sub(r'\*\*Page [ivxlcdm\d]+\*\*\s*\*\*GAO-[\w-]+[^*]*\*\*', '', content)
+    content = re.sub(r'^[*]*Page [ivxlcdm\d]+[*]*\s*$', '', content, flags=re.MULTILINE)
+
+    # Remove image placeholders that are just artifacts
+    content = re.sub(r'!\[\]\([^)]*\)\s*\n?', '', content)
+
+    # Remove TOC-style lines like "Letter 1" "Results in Brief 4" "Appendix I 30"
+    # These are lines that end with a number and are typical TOC entries
+    content = re.sub(r'^(?:Letter|Appendix [IVX]+|Results in Brief|Background|'
+                     r'Contents|Table of Contents|Figures?|Tables?|'
+                     r'Abbreviations|Scope and Methodology|Objectives,? Scope)'
+                     r'\s+\d+\s*$', '', content, flags=re.MULTILINE)
+
+    # Remove standalone "Contents" or "Table of Contents" headers followed by TOC
+    content = re.sub(r'^#{1,6}\s*(?:Table of )?Contents\s*$', '', content, flags=re.MULTILINE)
+
+    # Remove GAO report identifier lines that appear as headers/footers
+    content = re.sub(r'^#{1,6}\s*GAO-[\d]+-[\d\w]+\s*$', '', content, flags=re.MULTILINE)
+
+    # Remove repeated "GAO Report to..." lines after the first
+    gao_report_pattern = r'(?:GAO\s+)?Report to Congressional (?:Requesters?|Committees?)'
+    matches = list(re.finditer(gao_report_pattern, content, re.IGNORECASE))
+    if len(matches) > 1:
+        # Keep only the first occurrence
+        for m in reversed(matches[1:]):
+            content = content[:m.start()] + content[m.end():]
+
+    # Strip figure/table reference lines where figures are removed
+    content = re.sub(r'^Figure \d+:.*?(?:\d+\s*)?$', r'*[Figure removed from text conversion]*',
+                     content, flags=re.MULTILINE)
+
+    # Second pass: line-by-line cleanup
+    lines = content.split('\n')
     cleaned = []
-    skip_next_blank = False
     prev_blank = False
+    seen_gao_header = False
 
     for line in lines:
         stripped = line.strip()
 
-        # Skip page markers and artifacts
+        # Skip empty page artifacts
         if re.match(r'^Page \d+ of \d+$', stripped):
             continue
-        if re.match(r'^-{3,}$', stripped) and not cleaned:
-            continue
-        # Skip repeated GAO header/footer patterns
-        if re.match(r'^GAO-\d+-\d+', stripped) and len(stripped) < 30:
-            continue
+
+        # Skip repeated GAO organization name (keep first only)
         if stripped in ('United States Government Accountability Office',
-                        'U.S. Government Accountability Office'):
-            # Keep first occurrence only
-            if any('Government Accountability Office' in c for c in cleaned):
+                        'U.S. Government Accountability Office',
+                        'Government Accountability Office'):
+            if seen_gao_header:
                 continue
+            seen_gao_header = True
+
+        # Skip standalone report ID lines
+        if re.match(r'^(?:\*\*)?GAO-\d+-\d+\w*(?:\*\*)?$', stripped):
+            continue
+
+        # Skip "For Release on Delivery" type lines (keep content meaningful)
+        if re.match(r'^For Release on Delivery', stripped):
+            continue
+        if re.match(r'^Expected at \d+', stripped):
+            continue
 
         # Normalize excessive blank lines
         if not stripped:
@@ -67,13 +111,9 @@ def clean_gao_markdown(raw_md: str, title: str = "", report_id: str = "",
 
     content = '\n'.join(cleaned).strip()
 
-    # Remove image placeholders that are just artifacts
-    content = re.sub(r'!\[\]\([^)]*\)\s*\n?', '', content)
-
     # Build the final document with front matter
     parts = []
 
-    # Add title and metadata header
     if title:
         parts.append(f"# {title}")
     if report_id or pub_date:

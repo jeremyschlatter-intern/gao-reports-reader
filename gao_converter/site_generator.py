@@ -82,20 +82,52 @@ def md_to_html_simple(md: str) -> str:
     return '\n'.join(result)
 
 
+def get_summary_snippet(report_id: str, max_chars: int = 250) -> str:
+    """Extract a short summary snippet from the markdown file."""
+    md = read_markdown(report_id)
+    if not md:
+        return ""
+
+    # Look for "What GAO Found" section content
+    match = re.search(r'###?\s*What GAO Found\s*\n+(.*?)(?=\n###|\n---|\Z)',
+                      md, re.DOTALL)
+    if match:
+        text = match.group(1).strip()
+    else:
+        # Fall back to content after the metadata header
+        parts = md.split('---', 2)
+        text = parts[2].strip() if len(parts) > 2 else parts[-1].strip()
+
+    # Clean up markdown formatting
+    text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    text = re.sub(r'#{1,6}\s+', '', text)
+    text = re.sub(r'\n+', ' ', text)
+    text = text.strip()
+
+    if len(text) > max_chars:
+        text = text[:max_chars].rsplit(' ', 1)[0] + '...'
+
+    return text
+
+
 def generate_index_page(catalog: List[dict]) -> str:
     """Generate the main index HTML page."""
     report_cards = []
     for report in catalog:
-        source_badge = ('PDF' if report.get('source') == 'pdf'
+        source_badge = ('Full Report' if report.get('source') == 'pdf'
                        else 'Summary')
         source_class = ('badge-pdf' if report.get('source') == 'pdf'
                        else 'badge-summary')
 
         downloads = []
-        downloads.append(f'<a href="reports/{report["report_id"]}.html" class="btn btn-read">Read Online</a>')
+        downloads.append(f'<a href="reports/{report["report_id"]}.html" class="btn btn-read">Read</a>')
         downloads.append(f'<a href="markdown/{report["report_id"]}.md" class="btn btn-md" download>Markdown</a>')
         if report.get('has_epub'):
             downloads.append(f'<a href="epub/{report["report_id"]}.epub" class="btn btn-epub" download>EPUB</a>')
+
+        snippet = get_summary_snippet(report['report_id'])
+        snippet_html = f'<p class="report-snippet">{snippet}</p>' if snippet else ''
 
         card = f'''<article class="report-card" data-date="{report['pub_date']}"
                          data-title="{report['title'].lower()}"
@@ -106,6 +138,7 @@ def generate_index_page(catalog: List[dict]) -> str:
                 <span class="report-id">{report['report_id'].upper()}</span>
             </div>
             <h2><a href="reports/{report['report_id']}.html">{report['title']}</a></h2>
+            {snippet_html}
             <div class="report-actions">
                 {''.join(downloads)}
                 <a href="{report['url']}" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
@@ -118,7 +151,17 @@ def generate_index_page(catalog: List[dict]) -> str:
 
 def generate_report_page(report: dict, md_content: str) -> str:
     """Generate an individual report HTML page."""
-    html_content = md_to_html_simple(md_content)
+    # Strip the title and metadata lines from the content since
+    # the report page template already shows them in the header
+    stripped_md = md_content
+    # Remove leading title (# Title)
+    stripped_md = re.sub(r'^#\s+.+\n+', '', stripped_md)
+    # Remove metadata line (**Report:** ... | **Published:** ...)
+    stripped_md = re.sub(r'^\*\*Report:\*\*.*\n+', '', stripped_md)
+    # Remove leading horizontal rule
+    stripped_md = re.sub(r'^---+\s*\n+', '', stripped_md)
+
+    html_content = md_to_html_simple(stripped_md)
 
     downloads = []
     downloads.append(f'<a href="../markdown/{report["report_id"]}.md" class="btn btn-md" download>Markdown</a>')
@@ -379,6 +422,13 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
             color: var(--gold);
         }
 
+        .report-snippet {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+
         .report-actions {
             display: flex;
             gap: 0.5rem;
@@ -497,7 +547,7 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
                 <span class="header-badge">Markdown</span>
                 <span class="header-badge">EPUB / Kindle</span>
                 <span class="header-badge">HTML</span>
-                <span class="header-badge">Updated Daily</span>
+                <span class="header-badge">Open Formats</span>
             </div>
         </div>
     </header>
@@ -529,7 +579,7 @@ INDEX_TEMPLATE = '''<!DOCTYPE html>
             <h3>Convert Your Own GAO PDF</h3>
             <p>Have a GAO PDF you want to convert? Use our command-line tool.</p>
             <code style="display:block; background: #263238; color: #aed581; padding: 1rem; border-radius: 4px; text-align: left; font-size: 0.9rem;">
-                python -m gao_converter.pipeline_local your-report.pdf
+                python convert.py your-report.pdf
             </code>
         </section>
     </main>
