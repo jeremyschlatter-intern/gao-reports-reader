@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Museum Facilities: Deferred Maintenance Persists and Costs to Repair Are Unknown — GAO Reports</title>
+    <style>
+        :root {
+            --navy: #1a2744;
+            --navy-light: #2a3f66;
+            --gold: #c9a227;
+            --gold-light: #e8c84a;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --text-light: #6c757d;
+            --border: #dee2e6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        .top-bar {
+            background: var(--navy);
+            padding: 0.75rem 0;
+            border-bottom: 3px solid var(--gold);
+        }
+
+        .top-bar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-bar a {
+            color: white;
+            text-decoration: none;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .top-bar a:hover { color: var(--gold); }
+
+        .container {
+            max-width: 740px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .report-header {
+            padding: 2.5rem 0 1.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .report-header h1 {
+            font-size: 1.75rem;
+            line-height: 1.3;
+            color: var(--navy);
+            margin-bottom: 1rem;
+        }
+
+        .report-info {
+            display: flex;
+            gap: 1.5rem;
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+        }
+
+        .download-bar {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.4rem 0.9rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: all 0.15s;
+        }
+
+        .btn:hover {
+            background: var(--navy);
+            color: white;
+            border-color: var(--navy);
+        }
+
+        .btn-epub {
+            background: var(--gold);
+            color: var(--navy);
+            border-color: var(--gold);
+            font-weight: 600;
+        }
+
+        .btn-epub:hover {
+            background: var(--gold-light);
+        }
+
+        .report-content {
+            margin-bottom: 3rem;
+        }
+
+        .report-content h1 { font-size: 1.6rem; margin: 2rem 0 1rem; color: var(--navy); }
+        .report-content h2 { font-size: 1.35rem; margin: 1.75rem 0 0.75rem; color: var(--navy); }
+        .report-content h3 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; color: var(--navy-light); }
+        .report-content h4 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
+        .report-content h5, .report-content h6 { font-size: 1rem; margin: 1rem 0 0.5rem; }
+
+        .report-content p {
+            margin-bottom: 1rem;
+        }
+
+        .report-content li {
+            margin-left: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .report-content hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 1.5rem 0;
+        }
+
+        .report-content strong { font-weight: 700; }
+        .report-content em { font-style: italic; }
+
+        .report-content a {
+            color: var(--navy);
+            text-decoration: underline;
+        }
+
+        .report-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        .report-content th, .report-content td {
+            border: 1px solid var(--border);
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .report-content th {
+            background: var(--bg);
+            font-weight: 600;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        @media (max-width: 600px) {
+            .report-header h1 { font-size: 1.3rem; }
+            .report-info { flex-direction: column; gap: 0.25rem; }
+            .download-bar { flex-direction: column; }
+        }
+
+        @media print {
+            .top-bar, .download-bar, footer { display: none; }
+            body { font-size: 11pt; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="container">
+            <a href="../index.html">&larr; All Reports</a>
+            <a href="https://www.gao.gov/products/gao-26-108485" target="_blank" rel="noopener">View on GAO.gov</a>
+        </div>
+    </div>
+
+    <main class="container">
+        <div class="report-header">
+            <h1>Museum Facilities: Deferred Maintenance Persists and Costs to Repair Are Unknown</h1>
+            <div class="report-info">
+                <span>GAO-26-108485</span>
+                <span>Published 2026-03-10</span>
+                <span>U.S. Government Accountability Office</span>
+            </div>
+        </div>
+
+        <div class="download-bar">
+            <a href="../markdown/gao-26-108485.md" class="btn btn-md" download>Markdown</a>
+<a href="../epub/gao-26-108485.epub" class="btn btn-epub" download>EPUB (Kindle)</a>
+<a href="https://www.gao.gov/products/gao-26-108485" class="btn btn-gao" target="_blank" rel="noopener">View on GAO.gov</a>
+        </div>
+
+        <article class="report-content">
+            <h1>Museum Facilities: Deferred Maintenance Persists and Costs to Repair Are Unknown</h1>
+
+<p>
+<strong>Report:</strong> GAO-26-108485 | <strong>Published:</strong> 2026-03-10 | <strong>Source:</strong> <a href="https://www.gao.gov/products/gao-26-108485">U.S. Government Accountability Office</a>
+</p>
+
+<hr>
+
+<h3>What GAO Found</h3>
+
+<p>
+For an estimated 77 percent (about 12,300) of the nation’s museums, the condition of at least one building system (e.g., heating, ventilation, and air conditioning) or building issue puts their collections at risk of damage or loss, according to GAO’s survey of museums. An estimated 73 percent, or about 11,900 museums, cited at least one building system or facility issue that poses a potential health or safety concern. Further, GAO estimates that nearly half of museums identified physical accessibility, such as inaccessible entrances, as a potential concern. Museum representatives said they have no options but to store collections in areas that experience water leaks or uncontrolled temperature or humidity.
+</p>
+
+<p>
+Fine Art Stored in Bathroom (left) and Tribal Files and Artifacts Stored in Basement That Experiences Flooding Risk (right)
+</p>
+
+
+
+<p>
+The total cost to repair museums nationwide is unknown. Stakeholders cite challenges with limited museum resources to conduct facility assessments and expertise required to report accurate cost estimates for repairs. An estimated 85 percent (about 13,700) of museums report having a backlog of deferred maintenance and repair, and an estimated 80 percent expect deferred maintenance to persist or increase in the next 3 years based on projected budgets and planned projects. An estimated 49 percent, or about 7,900 museums, have a deferred maintenance backlog of more than $100,000 each.
+</p>
+
+<p>
+Common challenges to addressing facility repair cited by museums in response to GAO’s survey are funding availability and construction costs. Specifically, funding is a key challenge to addressing maintenance and repairs for an estimated 85 percent of museums. An estimated 80 percent of museums use donations or fundraising to address repairs. However, reliance on fundraising can pose challenges, particularly in rural areas with limited funding opportunities, or for museums with limited expertise or capacity for fundraising.
+</p>
+
+<h3>Why GAO Did This Study</h3>
+
+<p>
+Museums preserve history and serve an educational role. However, many museums are in aging buildings, and their building systems may need repair or replacement to prevent damage to collections. While the federal agency, the Institute of Museum and Library Services (IMLS), supports museum programs and services, museums are prohibited from using IMLS funds for building construction.
+</p>
+
+<p>
+The Joint Explanatory Statement accompanying the Departments of Labor, Health and Human Services, and Education, and Related Agencies Appropriations Act, 2024, includes a provision for GAO to study the availability and conditions of museum facilities. This report examines the reported physical conditions of museum facilities and the estimated cost and challenges to addressing facility repair needs. GAO’s scope included public (other than federal) and private nonprofit museums, excluding museum disciplines focused on living collections, like zoos.
+</p>
+
+<p>
+GAO conducted a sample survey generalizable to an in-scope population of nearly 16,700 museums in 50 states and the District of Columbia. The survey results can be found on the “Additional Data” link of GAO’s website. GAO visited 17 museums across two Tribal Nations, six states, the District of Columbia, and Puerto Rico. GAO selected these jurisdictions based on state or territorial funding for museum facilities, the number of natural disasters experienced in the last 5 years, and geography. GAO also interviewed officials from IMLS; local and tribal museums; state museum associations; and other museum stakeholders, including the American Alliance of Museums; Association of Tribal Archives, Libraries, and Museums; and Small Museum Association.
+</p>
+
+<p>
+For more information, contact David Marroni at marronid@gao.gov.
+</p>
+
+
+
+<hr>
+
+<p>
+<em>This report summary was extracted from the <a href="https://www.gao.gov/products/gao-26-108485">GAO RSS feed</a>. For the complete report, visit the <a href="https://www.gao.gov/products/gao-26-108485">GAO website</a>.</em>
+</p>
+        </article>
+    </main>
+
+    <footer>
+        <p>This is a public domain document from the
+           <a href="https://www.gao.gov/">U.S. Government Accountability Office</a>,
+           converted to open formats for easier reading.</p>
+        <p><a href="../index.html">&larr; Back to all reports</a></p>
+    </footer>
+</body>
+</html>

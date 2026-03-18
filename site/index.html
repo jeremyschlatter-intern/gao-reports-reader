@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAO Reports — Read Anywhere</title>
+    <style>
+        :root {
+            --navy: #1a2744;
+            --navy-light: #2a3f66;
+            --gold: #c9a227;
+            --gold-light: #e8c84a;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --text-light: #6c757d;
+            --border: #dee2e6;
+            --success: #28a745;
+            --info: #17a2b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        header {
+            background: var(--navy);
+            color: white;
+            padding: 2rem 0;
+            border-bottom: 4px solid var(--gold);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        header .container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        header p {
+            color: #b0bec5;
+            font-size: 1rem;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .header-badge {
+            background: var(--navy-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #cfd8dc;
+        }
+
+        .search-bar {
+            margin: 1.5rem 0;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-bar input:focus {
+            border-color: var(--navy);
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .result-count {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .sort-controls button {
+            background: none;
+            border: 1px solid var(--border);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .sort-controls button.active {
+            background: var(--navy);
+            color: white;
+            border-color: var(--navy);
+        }
+
+        .report-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 0.75rem;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .report-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-color: var(--navy-light);
+        }
+
+        .report-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .report-meta time {
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        .report-id {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.1rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-pdf {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-summary {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .report-card h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 0.75rem;
+        }
+
+        .report-card h2 a {
+            color: var(--navy);
+            text-decoration: none;
+        }
+
+        .report-card h2 a:hover {
+            color: var(--gold);
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+            transition: all 0.15s;
+        }
+
+        .btn:hover {
+            background: var(--navy);
+            color: white;
+            border-color: var(--navy);
+        }
+
+        .btn-read {
+            background: var(--navy);
+            color: white;
+            border-color: var(--navy);
+        }
+
+        .btn-read:hover {
+            background: var(--navy-light);
+        }
+
+        .btn-epub {
+            background: var(--gold);
+            color: var(--navy);
+            border-color: var(--gold);
+            font-weight: 600;
+        }
+
+        .btn-epub:hover {
+            background: var(--gold-light);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        footer a {
+            color: var(--navy);
+        }
+
+        .convert-section {
+            background: var(--card-bg);
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+
+        .convert-section h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .convert-section p {
+            color: var(--text-light);
+            margin-bottom: 1rem;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--navy-light);
+            border-radius: 8px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg);
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            background: #e3f2fd;
+            border-color: var(--navy);
+        }
+
+        .drop-zone input {
+            display: none;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.3rem; }
+            .report-card { padding: 1rem; }
+            .report-actions { flex-direction: column; }
+            .btn { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>GAO Reports &mdash; Read Anywhere</h1>
+            <p>Government Accountability Office reports in Markdown, EPUB, and HTML.
+               Read on your Kindle, in your browser, or anywhere else.</p>
+            <div class="header-badges">
+                <span class="header-badge">Markdown</span>
+                <span class="header-badge">EPUB / Kindle</span>
+                <span class="header-badge">HTML</span>
+                <span class="header-badge">Updated Daily</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="search-bar">
+            <input type="text" id="search" placeholder="Search reports by title, ID, or keyword..."
+                   aria-label="Search reports">
+        </div>
+
+        <div class="toolbar">
+            <span class="result-count" id="resultCount"></span>
+            <div class="sort-controls">
+                <button class="active" data-sort="date">Newest</button>
+                <button data-sort="title">A-Z</button>
+            </div>
+        </div>
+
+        <section id="reports">
+            <article class="report-card" data-date="2026-03-17"
+                         data-title="u.s. postal service: urgent action needed to fix unsustainable business model and improve service performance"
+                         data-id="gao-26-109008">
+            <div class="report-meta">
+                <time datetime="2026-03-17">2026-03-17</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-109008</span>
+            </div>
+            <h2><a href="reports/gao-26-109008.html">U.S. Postal Service: Urgent Action Needed to Fix Unsustainable Business Model and Improve Service Performance</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-109008.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-109008.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-109008.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-109008" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-17"
+                         data-title="foreign assistance: opportunities exist for agencies to improve their management of fraud, waste, and abuse risks"
+                         data-id="gao-26-108945">
+            <div class="report-meta">
+                <time datetime="2026-03-17">2026-03-17</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-108945</span>
+            </div>
+            <h2><a href="reports/gao-26-108945.html">Foreign Assistance: Opportunities Exist for Agencies to Improve Their Management of Fraud, Waste, and Abuse Risks</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-108945.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-108945.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-108945.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-108945" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-17"
+                         data-title="federal information transparency: action needed to improve efficiency and effectiveness and enhance program integrity"
+                         data-id="gao-26-109034">
+            <div class="report-meta">
+                <time datetime="2026-03-17">2026-03-17</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-109034</span>
+            </div>
+            <h2><a href="reports/gao-26-109034.html">Federal Information Transparency: Action Needed to Improve Efficiency and Effectiveness and Enhance Program Integrity</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-109034.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-109034.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-109034.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-109034" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-17"
+                         data-title="fiscal year 2027 budget request: u.s. government accountability office"
+                         data-id="gao-26-900720">
+            <div class="report-meta">
+                <time datetime="2026-03-17">2026-03-17</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-900720</span>
+            </div>
+            <h2><a href="reports/gao-26-900720.html">Fiscal Year 2027 Budget Request: U.S. Government Accountability Office</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-900720.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-900720.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-900720.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-900720" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-16"
+                         data-title="science & tech spotlight: engineered biofertilizers"
+                         data-id="gao-26-108745">
+            <div class="report-meta">
+                <time datetime="2026-03-16">2026-03-16</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-108745</span>
+            </div>
+            <h2><a href="reports/gao-26-108745.html">Science & Tech Spotlight: Engineered Biofertilizers</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-108745.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-108745.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-108745.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-108745" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-16"
+                         data-title="ukraine funding: hhs allocation and oversight of refugee assistance"
+                         data-id="gao-26-107815">
+            <div class="report-meta">
+                <time datetime="2026-03-16">2026-03-16</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107815</span>
+            </div>
+            <h2><a href="reports/gao-26-107815.html">Ukraine Funding: HHS Allocation and Oversight of Refugee Assistance</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107815.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107815.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107815.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107815" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-16"
+                         data-title="2025 tax filing: management of agency reforms and workforce planning needed to address severe risks to future irs operations"
+                         data-id="gao-26-108116">
+            <div class="report-meta">
+                <time datetime="2026-03-16">2026-03-16</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-108116</span>
+            </div>
+            <h2><a href="reports/gao-26-108116.html">2025 Tax Filing: Management of Agency Reforms and Workforce Planning Needed to Address Severe Risks to Future IRS Operations</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-108116.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-108116.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-108116.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-108116" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-12"
+                         data-title="transportation demonstration grants: dot should develop and implement a lessons learned plan"
+                         data-id="gao-26-107841">
+            <div class="report-meta">
+                <time datetime="2026-03-12">2026-03-12</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107841</span>
+            </div>
+            <h2><a href="reports/gao-26-107841.html">Transportation Demonstration Grants: DOT Should Develop and Implement a Lessons Learned Plan</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107841.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107841.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107841.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107841" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-12"
+                         data-title="defense contractor cybersecurity: dod should address external factors that could impede program implementation"
+                         data-id="gao-26-107955">
+            <div class="report-meta">
+                <time datetime="2026-03-12">2026-03-12</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107955</span>
+            </div>
+            <h2><a href="reports/gao-26-107955.html">Defense Contractor Cybersecurity: DOD Should Address External Factors That Could Impede Program Implementation</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107955.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107955.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107955.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107955" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-12"
+                         data-title="health care workforce: federal grants supporting mental health"
+                         data-id="gao-26-107951">
+            <div class="report-meta">
+                <time datetime="2026-03-12">2026-03-12</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107951</span>
+            </div>
+            <h2><a href="reports/gao-26-107951.html">Health Care Workforce: Federal Grants Supporting Mental Health</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107951.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107951.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107951.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107951" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-12"
+                         data-title="senate office of public records revolving fund: procedures related to fy 2024 receipts"
+                         data-id="gao-26-108653">
+            <div class="report-meta">
+                <time datetime="2026-03-12">2026-03-12</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-108653</span>
+            </div>
+            <h2><a href="reports/gao-26-108653.html">Senate Office of Public Records Revolving Fund: Procedures Related to FY 2024 Receipts</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-108653.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-108653.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-108653.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-108653" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-12"
+                         data-title="k-12 education: characteristics and turnaround strategies of schools identified for comprehensive support and improvement"
+                         data-id="gao-26-107849">
+            <div class="report-meta">
+                <time datetime="2026-03-12">2026-03-12</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107849</span>
+            </div>
+            <h2><a href="reports/gao-26-107849.html">K-12 Education: Characteristics and Turnaround Strategies of Schools Identified for Comprehensive Support and Improvement</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107849.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107849.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107849.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107849" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-11"
+                         data-title="federal student loans: education needs to address gaps in servicer oversight"
+                         data-id="gao-26-108534">
+            <div class="report-meta">
+                <time datetime="2026-03-11">2026-03-11</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-108534</span>
+            </div>
+            <h2><a href="reports/gao-26-108534.html">Federal Student Loans: Education Needs to Address Gaps in Servicer Oversight</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-108534.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-108534.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-108534.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-108534" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-10"
+                         data-title="museum facilities: deferred maintenance persists and costs to repair are unknown"
+                         data-id="gao-26-108485">
+            <div class="report-meta">
+                <time datetime="2026-03-10">2026-03-10</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-108485</span>
+            </div>
+            <h2><a href="reports/gao-26-108485.html">Museum Facilities: Deferred Maintenance Persists and Costs to Repair Are Unknown</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-108485.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-108485.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-108485.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-108485" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-09"
+                         data-title="private dental and vision insurance: market concentration varied among states"
+                         data-id="gao-26-107787">
+            <div class="report-meta">
+                <time datetime="2026-03-09">2026-03-09</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107787</span>
+            </div>
+            <h2><a href="reports/gao-26-107787.html">Private Dental and Vision Insurance: Market Concentration Varied Among States</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107787.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107787.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107787.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107787" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-09"
+                         data-title="democracy assistance: state should require plans to mitigate effects of reported antidemocratic actions overseas"
+                         data-id="gao-26-108754">
+            <div class="report-meta">
+                <time datetime="2026-03-09">2026-03-09</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-108754</span>
+            </div>
+            <h2><a href="reports/gao-26-108754.html">Democracy Assistance: State Should Require Plans to Mitigate Effects of Reported Antidemocratic Actions Overseas</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-108754.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-108754.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-108754.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-108754" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-05"
+                         data-title="cybersecurity regulations: additional industry perspectives on the impact, progress, challenges, and opportunities of harmonization"
+                         data-id="gao-26-108685">
+            <div class="report-meta">
+                <time datetime="2026-03-05">2026-03-05</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-108685</span>
+            </div>
+            <h2><a href="reports/gao-26-108685.html">Cybersecurity Regulations: Additional Industry Perspectives on the Impact, Progress, Challenges, and Opportunities of Harmonization</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-108685.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-108685.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-108685.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-108685" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-05"
+                         data-title="federal programs: omb needs to continue developing a complete and useful inventory"
+                         data-id="gao-26-107551">
+            <div class="report-meta">
+                <time datetime="2026-03-05">2026-03-05</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107551</span>
+            </div>
+            <h2><a href="reports/gao-26-107551.html">Federal Programs: OMB Needs to Continue Developing a Complete and Useful Inventory</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107551.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107551.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107551.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107551" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-04"
+                         data-title="military readiness: dod should take further actions to address challenges across the air, sea, ground, and space domains"
+                         data-id="gao-26-108888">
+            <div class="report-meta">
+                <time datetime="2026-03-04">2026-03-04</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-108888</span>
+            </div>
+            <h2><a href="reports/gao-26-108888.html">Military Readiness: DOD Should Take Further Actions to Address Challenges Across the Air, Sea, Ground, and Space Domains</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-108888.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-108888.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-108888.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-108888" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-03"
+                         data-title="disaster assistance: sba should take steps to make data sharing with irs more efficient"
+                         data-id="gao-26-107682">
+            <div class="report-meta">
+                <time datetime="2026-03-03">2026-03-03</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107682</span>
+            </div>
+            <h2><a href="reports/gao-26-107682.html">Disaster Assistance: SBA Should Take Steps to Make Data Sharing with IRS More Efficient</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107682.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107682.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107682.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107682" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-03"
+                         data-title="child welfare: hhs should clarify guidance on state spending for congregate care"
+                         data-id="gao-26-107592">
+            <div class="report-meta">
+                <time datetime="2026-03-03">2026-03-03</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107592</span>
+            </div>
+            <h2><a href="reports/gao-26-107592.html">Child Welfare: HHS Should Clarify Guidance on State Spending for Congregate Care</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107592.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107592.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107592.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107592" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-03"
+                         data-title="protections for whistleblowers and others: selected agency actions regarding reports of potential wrongdoing"
+                         data-id="gao-26-107650">
+            <div class="report-meta">
+                <time datetime="2026-03-03">2026-03-03</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107650</span>
+            </div>
+            <h2><a href="reports/gao-26-107650.html">Protections For Whistleblowers and Others: Selected Agency Actions Regarding Reports of Potential Wrongdoing</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107650.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107650.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107650.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107650" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-03"
+                         data-title="animal drugs: strengthening federal incentives could help address unmet animal health needs"
+                         data-id="gao-26-107896">
+            <div class="report-meta">
+                <time datetime="2026-03-03">2026-03-03</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107896</span>
+            </div>
+            <h2><a href="reports/gao-26-107896.html">Animal Drugs: Strengthening Federal Incentives Could Help Address Unmet Animal Health Needs</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107896.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107896.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107896.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107896" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-02"
+                         data-title="va health care: recommendations and observations to improve community care and support for caregivers related to the dole act"
+                         data-id="gao-26-108943">
+            <div class="report-meta">
+                <time datetime="2026-03-02">2026-03-02</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-108943</span>
+            </div>
+            <h2><a href="reports/gao-26-108943.html">VA Health Care: Recommendations and Observations to Improve Community Care and Support for Caregivers Related to the Dole Act</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-108943.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-108943.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-108943.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-108943" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2026-03-02"
+                         data-title="nuclear waste cleanup: doe needs to improve the accuracy of cost and schedule information for major projects and activities"
+                         data-id="gao-26-107820">
+            <div class="report-meta">
+                <time datetime="2026-03-02">2026-03-02</time>
+                <span class="badge badge-summary">Summary</span>
+                <span class="report-id">GAO-26-107820</span>
+            </div>
+            <h2><a href="reports/gao-26-107820.html">Nuclear Waste Cleanup: DOE Needs to Improve the Accuracy of Cost and Schedule Information for Major Projects and Activities</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-26-107820.html" class="btn btn-read">Read Online</a><a href="markdown/gao-26-107820.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-26-107820.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-26-107820" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2007-10-01"
+                         data-title="financial regulation: industry trends continue to challenge the federal regulatory structure"
+                         data-id="gao-07-106">
+            <div class="report-meta">
+                <time datetime="2007-10-01">2007-10-01</time>
+                <span class="badge badge-pdf">PDF</span>
+                <span class="report-id">GAO-07-106</span>
+            </div>
+            <h2><a href="reports/gao-07-106.html">Financial Regulation: Industry Trends Continue to Challenge the Federal Regulatory Structure</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-07-106.html" class="btn btn-read">Read Online</a><a href="markdown/gao-07-106.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-07-106.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-07-106" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2007-02-01"
+                         data-title="crude oil: uncertainty about future oil supply makes it important to develop a strategy for addressing a peak and decline in oil production"
+                         data-id="gao-07-283">
+            <div class="report-meta">
+                <time datetime="2007-02-01">2007-02-01</time>
+                <span class="badge badge-pdf">PDF</span>
+                <span class="report-id">GAO-07-283</span>
+            </div>
+            <h2><a href="reports/gao-07-283.html">Crude Oil: Uncertainty about Future Oil Supply Makes It Important to Develop a Strategy for Addressing a Peak and Decline in Oil Production</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-07-283.html" class="btn btn-read">Read Online</a><a href="markdown/gao-07-283.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-07-283.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-07-283" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2006-09-01"
+                         data-title="grants management: enhancing performance accountability provisions could lead to better results"
+                         data-id="gao-06-1046">
+            <div class="report-meta">
+                <time datetime="2006-09-01">2006-09-01</time>
+                <span class="badge badge-pdf">PDF</span>
+                <span class="report-id">GAO-06-1046</span>
+            </div>
+            <h2><a href="reports/gao-06-1046.html">Grants Management: Enhancing Performance Accountability Provisions Could Lead to Better Results</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-06-1046.html" class="btn btn-read">Read Online</a><a href="markdown/gao-06-1046.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-06-1046.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-06-1046" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2006-02-01"
+                         data-title="breastfeeding: some strategies used to market infant formula may discourage breastfeeding"
+                         data-id="gao-06-282">
+            <div class="report-meta">
+                <time datetime="2006-02-01">2006-02-01</time>
+                <span class="badge badge-pdf">PDF</span>
+                <span class="report-id">GAO-06-282</span>
+            </div>
+            <h2><a href="reports/gao-06-282.html">Breastfeeding: Some Strategies Used to Market Infant Formula May Discourage Breastfeeding</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-06-282.html" class="btn btn-read">Read Online</a><a href="markdown/gao-06-282.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-06-282.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-06-282" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+<article class="report-card" data-date="2005-09-01"
+                         data-title="managing for results: enhancing agency use of performance information for management decision making"
+                         data-id="gao-05-927">
+            <div class="report-meta">
+                <time datetime="2005-09-01">2005-09-01</time>
+                <span class="badge badge-pdf">PDF</span>
+                <span class="report-id">GAO-05-927</span>
+            </div>
+            <h2><a href="reports/gao-05-927.html">Managing for Results: Enhancing Agency Use of Performance Information for Management Decision Making</a></h2>
+            <div class="report-actions">
+                <a href="reports/gao-05-927.html" class="btn btn-read">Read Online</a><a href="markdown/gao-05-927.md" class="btn btn-md" download>Markdown</a><a href="epub/gao-05-927.epub" class="btn btn-epub" download>EPUB</a>
+                <a href="https://www.gao.gov/products/gao-05-927" class="btn btn-gao" target="_blank" rel="noopener">GAO.gov</a>
+            </div>
+        </article>
+        </section>
+
+        <div class="no-results" id="noResults" style="display:none">
+            <h3>No reports found</h3>
+            <p>Try a different search term.</p>
+        </div>
+
+        <section class="convert-section">
+            <h3>Convert Your Own GAO PDF</h3>
+            <p>Have a GAO PDF you want to convert? Use our command-line tool.</p>
+            <code style="display:block; background: #263238; color: #aed581; padding: 1rem; border-radius: 4px; text-align: left; font-size: 0.9rem;">
+                python -m gao_converter.pipeline_local your-report.pdf
+            </code>
+        </section>
+    </main>
+
+    <footer>
+        <p>GAO Reports are public domain documents produced by the
+           <a href="https://www.gao.gov/" target="_blank" rel="noopener">U.S. Government Accountability Office</a>.
+        </p>
+        <p>This tool converts them to open, portable formats for easier reading.</p>
+    </footer>
+
+    <script>
+        // Search
+        const searchInput = document.getElementById('search');
+        const reports = document.querySelectorAll('.report-card');
+        const resultCount = document.getElementById('resultCount');
+        const noResults = document.getElementById('noResults');
+
+        function updateCount() {
+            const visible = document.querySelectorAll('.report-card:not([style*="display: none"])');
+            resultCount.textContent = visible.length + ' report' + (visible.length !== 1 ? 's' : '');
+            noResults.style.display = visible.length === 0 ? 'block' : 'none';
+        }
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            reports.forEach(card => {
+                const title = card.dataset.title || '';
+                const id = card.dataset.id || '';
+                const text = card.textContent.toLowerCase();
+                const match = !query || title.includes(query) || id.includes(query) || text.includes(query);
+                card.style.display = match ? '' : 'none';
+            });
+            updateCount();
+        });
+
+        // Sort
+        document.querySelectorAll('.sort-controls button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.sort-controls button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                const container = document.getElementById('reports');
+                const cards = Array.from(reports);
+
+                if (this.dataset.sort === 'date') {
+                    cards.sort((a, b) => (b.dataset.date || '').localeCompare(a.dataset.date || ''));
+                } else {
+                    cards.sort((a, b) => (a.dataset.title || '').localeCompare(b.dataset.title || ''));
+                }
+
+                cards.forEach(card => container.appendChild(card));
+            });
+        });
+
+        updateCount();
+    </script>
+</body>
+</html>

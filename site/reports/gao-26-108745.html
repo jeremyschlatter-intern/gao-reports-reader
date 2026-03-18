@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Science & Tech Spotlight: Engineered Biofertilizers — GAO Reports</title>
+    <style>
+        :root {
+            --navy: #1a2744;
+            --navy-light: #2a3f66;
+            --gold: #c9a227;
+            --gold-light: #e8c84a;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --text-light: #6c757d;
+            --border: #dee2e6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        .top-bar {
+            background: var(--navy);
+            padding: 0.75rem 0;
+            border-bottom: 3px solid var(--gold);
+        }
+
+        .top-bar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-bar a {
+            color: white;
+            text-decoration: none;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .top-bar a:hover { color: var(--gold); }
+
+        .container {
+            max-width: 740px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .report-header {
+            padding: 2.5rem 0 1.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .report-header h1 {
+            font-size: 1.75rem;
+            line-height: 1.3;
+            color: var(--navy);
+            margin-bottom: 1rem;
+        }
+
+        .report-info {
+            display: flex;
+            gap: 1.5rem;
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+        }
+
+        .download-bar {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.4rem 0.9rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: all 0.15s;
+        }
+
+        .btn:hover {
+            background: var(--navy);
+            color: white;
+            border-color: var(--navy);
+        }
+
+        .btn-epub {
+            background: var(--gold);
+            color: var(--navy);
+            border-color: var(--gold);
+            font-weight: 600;
+        }
+
+        .btn-epub:hover {
+            background: var(--gold-light);
+        }
+
+        .report-content {
+            margin-bottom: 3rem;
+        }
+
+        .report-content h1 { font-size: 1.6rem; margin: 2rem 0 1rem; color: var(--navy); }
+        .report-content h2 { font-size: 1.35rem; margin: 1.75rem 0 0.75rem; color: var(--navy); }
+        .report-content h3 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; color: var(--navy-light); }
+        .report-content h4 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
+        .report-content h5, .report-content h6 { font-size: 1rem; margin: 1rem 0 0.5rem; }
+
+        .report-content p {
+            margin-bottom: 1rem;
+        }
+
+        .report-content li {
+            margin-left: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .report-content hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 1.5rem 0;
+        }
+
+        .report-content strong { font-weight: 700; }
+        .report-content em { font-style: italic; }
+
+        .report-content a {
+            color: var(--navy);
+            text-decoration: underline;
+        }
+
+        .report-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        .report-content th, .report-content td {
+            border: 1px solid var(--border);
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .report-content th {
+            background: var(--bg);
+            font-weight: 600;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        @media (max-width: 600px) {
+            .report-header h1 { font-size: 1.3rem; }
+            .report-info { flex-direction: column; gap: 0.25rem; }
+            .download-bar { flex-direction: column; }
+        }
+
+        @media print {
+            .top-bar, .download-bar, footer { display: none; }
+            body { font-size: 11pt; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="container">
+            <a href="../index.html">&larr; All Reports</a>
+            <a href="https://www.gao.gov/products/gao-26-108745" target="_blank" rel="noopener">View on GAO.gov</a>
+        </div>
+    </div>
+
+    <main class="container">
+        <div class="report-header">
+            <h1>Science & Tech Spotlight: Engineered Biofertilizers</h1>
+            <div class="report-info">
+                <span>GAO-26-108745</span>
+                <span>Published 2026-03-16</span>
+                <span>U.S. Government Accountability Office</span>
+            </div>
+        </div>
+
+        <div class="download-bar">
+            <a href="../markdown/gao-26-108745.md" class="btn btn-md" download>Markdown</a>
+<a href="../epub/gao-26-108745.epub" class="btn btn-epub" download>EPUB (Kindle)</a>
+<a href="https://www.gao.gov/products/gao-26-108745" class="btn btn-gao" target="_blank" rel="noopener">View on GAO.gov</a>
+        </div>
+
+        <article class="report-content">
+            <h1>Science & Tech Spotlight: Engineered Biofertilizers</h1>
+
+<p>
+<strong>Report:</strong> GAO-26-108745 | <strong>Published:</strong> 2026-03-16 | <strong>Source:</strong> <a href="https://www.gao.gov/products/gao-26-108745">U.S. Government Accountability Office</a>
+</p>
+
+<hr>
+
+<h3>Summary</h3>
+
+<p>
+Why This Matters
+</p>
+
+<p>
+Chemical fertilizers account for up to 45 percent of input costs for some crops. Engineered biofertilizers may reduce these costs and increase crop yields.
+</p>
+
+<p>
+Key Takeaways
+</p>
+
+
+<p>
+Engineered biofertilizers are made of microbes and other organic materials that improve nutrient supply in soil.
+The lack of a clear definition for biofertilizers leads to uncertainty about whether existing regulations apply.
+Current regulations may also not be equipped for genetically engineered microbes, which may hamper U.S. competitiveness.
+</p>
+
+
+<p>
+The Technology
+</p>
+
+<p>
+What is it? Biofertilizer technology uses organic materials, such as microbes (bacteria, fungi, and algae) to make agricultural products that enhance plant growth, improve soil health, and increase nutrient supply. Engineered biofertilizers use genetic engineering and combine multiple strains of microbes to improve these effects. These products may increase crop yield by 5 to 20 percent, although results vary by crop and local conditions.
+</p>
+
+<p>
+How does it work? Biofertilizers are typically applied to seeds as a coating or to soil as a powder or liquid. They work through several direct and indirect mechanisms (see figure). For example, biofertilizers can convert soil nutrients, such as potassium and phosphorus, into soluble forms accessible to plants.
+</p>
+
+<p>
+With genetically engineered biofertilizers, microbes are altered to be more effective. For example, tools such as CRISPR (a gene-editing technology) can be used to transfer a beneficial trait from one microbe species to another or to tailor a microbe for specific crop types or environments.
+</p>
+
+<p>
+How Biofertilizers Work – Selected Mechanisms
+</p>
+
+
+
+<p>
+How mature is it? Biofertilizers have been used in commercial agriculture since the 1890s. We identified two engineered biofertilizers containing genetically engineered microbes introduced in the 2020s. While engineered biofertilizers appear promising in the lab, real-world effectiveness is unclear. According to researchers, biofertilizers containing multiple strains of microbes can enhance plant health more than single-strain formulations can. Researchers have also found that genetic engineering can help to design and optimize various strains to work synergistically to enhance biofertilizer effectiveness.
+</p>
+
+<p>
+Studies suggest that biofertilizer use is more widespread in some South American countries than in the U.S. For example, Brazil uses biofertilizers in general on over 90 percent of its soybean acres, compared to 15 percent in the U.S. A 2020 study estimated that Brazil’s biofertilizer use provides over $15 billion in net savings annually on nitrogen fertilizer.
+</p>
+
+<p>
+The biofertilizer market is growing. According to a market intelligence firm, in 2025, the U.S. market stood at $640 million and is expected to reach $1.3 billion by 2031. In contrast, the U.S. chemical fertilizer market is expected to exceed $39 billion by 2031.
+</p>
+
+<p>
+Opportunities
+</p>
+
+
+<p>
+Economic benefits. Fertilizer costs have increased due to tight global supplies, energy shocks, and trade disruptions.Increased crop yields and reduced fertilizer costs could mean more profit for U.S. farmers. Because biofertilizers can reduce the need for chemical fertilizers, they may reduce the effect of price volatility, including for nitrogen and other fertilizers that can be derived from critical minerals, such as potash and phosphate rock.
+Environmental benefits. Biofertilizers may improve soil health and mitigate pollution by reducing the amounts of chemical fertilizers used and their associated runoff. Runoff can flow into rivers and oceans, causing harmful algal blooms and dead zones, which threaten human health and fisheries.
+</p>
+
+
+<p>
+Challenges
+</p>
+
+
+<p>
+Regulatory uncertainty. The U.S. lacks a clear regulatory definition for biofertilizers, which leads to uncertainty about whether they are subject to existing regulations. Failing to follow regulatory requirements can be costly for manufacturers. For example, the Environmental Protection Agency, in 2020, levied a $300,000 penalty under the Federal Insecticide, Fungicide, and Rodenticide Act to one company selling an unregistered biofertilizer.
+Regulation of engineered microbes. Researchers believe that the current U.S. regulatory system is not well equipped to regulate genetically engineered microbes, leading to a large burden on industry, which may impede innovation and further complicate reviews of biofertilizers that use these microbes.
+Unclear cost-effectiveness. In 2023, an industry survey found that farmers not using biofertilizers would use them if their profitability could be demonstrated. This survey also found that the lack of widespread acceptance of biofertilizers was associated with a need for further education.
+</p>
+
+
+<p>
+Policy Context and Questions
+</p>
+
+
+<p>
+What could improve the quality and reliability of engineered biofertilizers?
+How effective are engineered biofertilizer products in protecting U.S. farmers from the impacts of fertilizer price increases and volatility?
+To what extent can existing regulatory frameworks support effective development and use of new and existing engineered biofertilizers?
+</p>
+
+
+<p>
+Selected GAO Work
+</p>
+
+<p>
+Precision Agriculture: Benefits and Challenges for Technology Adoption and Use, GAO-24-105962.
+</p>
+
+<p>
+Selected Reference
+</p>
+
+<p>
+Esraa E. Ammar, Hadeer A. Rady, Ahmed M. Khattab, et al.. “A comprehensive overview of eco-friendly bio-fertilizers extracted from living organisms.” Environmental Science and Pollution Research, vol. 30 (2023), https://doi.org/10.1007/s11356-023-30260-x.
+</p>
+
+<p>
+For more information, contact Sarah Harvey at HarveyS@gao.gov.
+</p>
+
+
+
+<hr>
+
+<p>
+<em>This report summary was extracted from the <a href="https://www.gao.gov/products/gao-26-108745">GAO RSS feed</a>. For the complete report, visit the <a href="https://www.gao.gov/products/gao-26-108745">GAO website</a>.</em>
+</p>
+        </article>
+    </main>
+
+    <footer>
+        <p>This is a public domain document from the
+           <a href="https://www.gao.gov/">U.S. Government Accountability Office</a>,
+           converted to open formats for easier reading.</p>
+        <p><a href="../index.html">&larr; Back to all reports</a></p>
+    </footer>
+</body>
+</html>
