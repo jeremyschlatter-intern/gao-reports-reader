@@ -70,18 +70,70 @@ def _md_to_html_fallback(md: str) -> str:
 
 
 def extract_topic(title: str) -> str:
-    """Extract a topic/category from a GAO report title.
+    """Extract a broad topic/category from a GAO report title.
 
-    GAO titles follow the pattern: 'Topic Area: Specific Title'
+    GAO titles follow the pattern: 'Topic Area: Specific Title'.
+    We extract and normalize to broad categories.
     """
+    # Mapping of keywords to broad categories
+    TOPIC_MAP = {
+        'cybersecurity': 'Cybersecurity & IT',
+        'cyber': 'Cybersecurity & IT',
+        'information technology': 'Cybersecurity & IT',
+        'quantum': 'Cybersecurity & IT',
+        'defense': 'Defense & National Security',
+        'military': 'Defense & National Security',
+        'dod': 'Defense & National Security',
+        'nuclear': 'Defense & National Security',
+        'health care': 'Health Care',
+        'health': 'Health Care',
+        'mental health': 'Health Care',
+        'dental': 'Health Care',
+        'vision': 'Health Care',
+        'medicare': 'Health Care',
+        'va health': 'Health Care',
+        'breastfeeding': 'Health Care',
+        'education': 'Education',
+        'k-12': 'Education',
+        'student loan': 'Education',
+        'tax': 'Financial & Economic',
+        'irs': 'Financial & Economic',
+        'fiscal': 'Financial & Economic',
+        'financial': 'Financial & Economic',
+        'budget': 'Financial & Economic',
+        'postal': 'Government Operations',
+        'federal program': 'Government Operations',
+        'federal information': 'Government Operations',
+        'grants management': 'Government Operations',
+        'managing for results': 'Government Operations',
+        'senate office': 'Government Operations',
+        'whistleblower': 'Government Operations',
+        'foreign': 'Foreign Affairs',
+        'ukraine': 'Foreign Affairs',
+        'democracy': 'Foreign Affairs',
+        'disaster': 'Environment & Energy',
+        'energy': 'Environment & Energy',
+        'crude oil': 'Environment & Energy',
+        'biofertilizer': 'Environment & Energy',
+        'science': 'Environment & Energy',
+        'transportation': 'Infrastructure',
+        'museum': 'Infrastructure',
+        'child welfare': 'Social Programs',
+        'animal': 'Agriculture',
+    }
+
+    title_lower = title.lower()
+    for keyword, category in TOPIC_MAP.items():
+        if keyword in title_lower:
+            return category
+
+    # Fall back to extracting from title prefix
     if ':' in title:
         topic = title.split(':')[0].strip()
-        # Clean up common prefixes
-        topic = re.sub(r'^\d+\s+', '', topic)
-        # Keep it concise
-        if len(topic) > 40:
-            topic = topic[:40].rsplit(' ', 1)[0]
+        if len(topic) > 35:
+            topic = topic[:35].rsplit(' ', 1)[0]
         return topic
+
     return "General"
 
 

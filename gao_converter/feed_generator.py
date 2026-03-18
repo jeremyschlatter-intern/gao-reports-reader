@@ -21,30 +21,39 @@ def generate_feed():
 
     items = []
     for report in catalog[:25]:  # Latest 25
-        # Read the summary snippet
         md_path = os.path.join(DATA_DIR, 'markdown', f'{report["report_id"]}.md')
-        snippet = ""
+        description = ""
         if os.path.exists(md_path):
             with open(md_path, 'r', encoding='utf-8') as f:
                 md = f.read()
-            # Extract "What GAO Found" text
             import re
+            # Extract the full "What GAO Found" section
             match = re.search(r'### What GAO Found\s*\n+(.*?)(?=\n###|\n---|\Z)',
                               md, re.DOTALL)
             if match:
-                snippet = match.group(1).strip()[:500]
+                description = match.group(1).strip()
             else:
-                # First paragraph after headers
+                # First substantial paragraph
                 for line in md.split('\n'):
                     line = line.strip()
                     if (len(line) > 80 and not line.startswith('#') and
                             not line.startswith('**Report') and not line.startswith('---')):
-                        snippet = line[:500]
+                        description = line
                         break
+
+            # Truncate at sentence boundary if very long
+            if len(description) > 2000:
+                # Find last sentence end before 2000 chars
+                truncated = description[:2000]
+                last_period = truncated.rfind('. ')
+                if last_period > 500:
+                    description = truncated[:last_period + 1]
+                else:
+                    description = truncated.rsplit(' ', 1)[0] + '...'
 
         # Escape XML
         title_esc = report['title'].replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-        snippet_esc = snippet.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        snippet_esc = description.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
         item = f"""    <item>
       <title>{title_esc}</title>
